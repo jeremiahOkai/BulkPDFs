@@ -1,0 +1,103 @@
+function createBulkPDFs(){
+  //GET file permission - payroll template 
+  const docFile = DriveApp.getFileById("id of template");
+  //GET folder permission -  temp folder 
+  const tempFolder = DriveApp.getFolderById("id of temp folder ");
+  //GET folder permission - pdf folder 
+  const pdfFolder = DriveApp.getFolderById("id of pdf folder");
+  //Open and read Main Payroll info 
+  const currentSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("MAIN PAYROLL");
+  
+  //Populate info in createPDF function 
+  const data = currentSheet.getRange(3,2,3,33).getDisplayValues();
+
+  //Track errors 
+  let errors=[];
+  data.forEach(row => {
+  try
+   {
+    createPDF(row[0], //name
+              row[24], //runperiod
+              row[25], //runstartdate
+              row[26], //runenddate
+              row[27], //bankaccountnumber 
+              row[2],  //jobtitle
+              row[29], //ssssfIDf
+              row[30], //petraID
+              row[23], //taxstatus
+              row[28], //bankname
+              row[3],  //basicsalary
+              row[5],  //fixedovertimeallowance
+              row[10], //rentallowance
+              row[7],  //oncallallowance
+              row[11], //specialdutyallowance
+              row[18], //incometaxPAYE
+              row[14], //ssftier2employeecontribution
+              row[15], //staffwelfarecontrbutionziswa
+              row[19], //prepaidrentdeduction
+              row[13], //totalearnings
+              row[20], //totaldeductions
+              row[21], //netpay
+              row[22], //employerssfcont
+              row[31],
+              'Payslip_'+row[0],  //pdfName 
+              docFile,
+              tempFolder,
+              pdfFolder);
+                Logger.log(row[0])
+errors.push([""]);
+  } 
+  catch(err)
+  {
+    errors.push(["Failed"]);
+  }
+
+});
+//currentSheet.getRange(2, 34, currentSheet.getLastRow()-1, 1).setValues(errors);
+
+}
+
+
+function createPDF(name,runperiod,runstartdate,runenddate,bankaccountnumber,jobtitle,ssfID,petraID,taxstatus,bankname,basicsalary,fixedovertimeallowance,rentallowance,oncallallowance,specialdutyallowance,incometaxPAYE,ssftier2employeecontribution,staffwelfarecontrbutionziswa,prepaidrentdeduction,totalearnings,totaldeductions,netpay,employerssfcont,emailAddress,pdfName,docFile,tempFolder,pdfFolder) {
+  
+const tempFile = docFile.makeCopy(tempFolder);
+Logger.log(tempFile.getId())
+const tempDocFile = SpreadsheetApp.openById(tempFile.getId()).getSheetByName('PAYSLIP TEMP');
+tempDocFile.getRange('B8').setValue(name);
+tempDocFile.getRange('B9').setValue(runperiod);
+tempDocFile.getRange('B10').setValue(runstartdate);
+tempDocFile.getRange('B11').setValue(runenddate);
+tempDocFile.getRange('B12').setValue(bankaccountnumber);
+tempDocFile.getRange('D8').setValue(jobtitle);
+tempDocFile.getRange('D9').setValue(ssfID);
+tempDocFile.getRange('D10').setValue(petraID);
+tempDocFile.getRange('D11').setValue(taxstatus);
+tempDocFile.getRange('D12').setValue(bankname);
+tempDocFile.getRange('C15').setValue(basicsalary);
+tempDocFile.getRange('C16').setValue(fixedovertimeallowance);
+tempDocFile.getRange('C17').setValue(rentallowance);
+tempDocFile.getRange('C18').setValue(oncallallowance);
+tempDocFile.getRange('C19').setValue(specialdutyallowance);
+tempDocFile.getRange('C24').setValue(totalearnings);
+tempDocFile.getRange('D20').setValue(incometaxPAYE);
+tempDocFile.getRange('D21').setValue(ssftier2employeecontribution);
+tempDocFile.getRange('D22').setValue(staffwelfarecontrbutionziswa);
+tempDocFile.getRange('D23').setValue(prepaidrentdeduction);
+tempDocFile.getRange('D24').setValue(totaldeductions);
+tempDocFile.getRange('C27:D27').setValue(netpay);
+tempDocFile.getRange('C29').setValue(employerssfcont);
+SpreadsheetApp.flush();
+
+const pdfContentBlob = tempFile.getAs(MimeType.PDF);
+pdfFolder.createFile(pdfContentBlob).setName(pdfName);
+tempFolder.removeFile(tempFile);
+
+var message = "Please find attached a copy of your payslip below."; // Second column
+var subject = 'PaySlip '+runperiod;
+
+MailApp.sendEmail(emailAddress, subject, message, {
+     attachments: [pdfFolder.createFile(pdfContentBlob).setName(pdfName)]
+     })
+    
+}
+
