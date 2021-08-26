@@ -9,87 +9,64 @@ function createBulkPDFs(){
   const currentSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("MAIN PAYROLL");
   
   //Populate info in createPDF function 
-  const data = currentSheet.getRange(3,2,3,33).getDisplayValues();
+  startingRow = 2;
+  startingCol = 1;
+  numberOfDataRows = 150;
+  numberOfCols = 35;
 
-  //Track errors 
-  let errors=[];
+  const data = currentSheet.getRange(startingRow,startingCol,numberOfDataRows,numberOfCols).getDisplayValues();
+
+  let errors = []; //Track errors
+  var counter = 0
   data.forEach(row => {
-  try
-   {
-    createPDF(row[0], //name
-              row[24], //runperiod
-              row[25], //runstartdate
-              row[26], //runenddate
-              row[27], //bankaccountnumber 
-              row[2],  //jobtitle
-              row[29], //ssssfIDf
-              row[30], //petraID
-              row[23], //taxstatus
-              row[28], //bankname
-              row[3],  //basicsalary
-              row[5],  //fixedovertimeallowance
-              row[10], //rentallowance
-              row[7],  //oncallallowance
-              row[11], //specialdutyallowance
-              row[18], //incometaxPAYE
-              row[14], //ssftier2employeecontribution
-              row[15], //staffwelfarecontrbutionziswa
-              row[19], //prepaidrentdeduction
-              row[13], //totalearnings
-              row[20], //totaldeductions
-              row[21], //netpay
-              row[22], //employerssfcont
-              row[31],
-              'Payslip_'+row[0],  //pdfName 
-              docFile,
-              tempFolder,
-              pdfFolder);
-                Logger.log(row[0])
-errors.push([""]);
-  } 
-  catch(err)
-  {
-    errors.push(["Failed"]);
+    if(row[34] =='PROCESSED'){
+        errors.push(["PROCESSED"])
+    }
+    else{
+      try{
+        counter = row[0]
+        valuesB8B12 = [[row[1]],[row[25]],[row[26]],[row[27]],[row[28]]]
+        valuesD8D12 = [[row[3]],[row[30]],[row[31]],[row[24]],[row[29]]]
+        valuesC15C19 = [[row[4]],[row[6]],[row[11]],[row[8]],[row[12]]]
+        valuesD20D24 = [[row[19]],[row[15]],[row[16]],[row[20]],[row[21]]]
+        createPDF(valuesB8B12,valuesD8D12,valuesC15C19,valuesD20D24,
+                  row[14], //totalearnings
+                  row[22], //netpay
+                  row[23], //employerssfcont
+                  row[25], //runperiod,
+                  row[32], //emails
+                  'Payslip_'+row[1],  //pdfName
+                  docFile,
+                  tempFolder,
+                  pdfFolder);
+        errors.push(["PROCESSED"]);
+      }
+      catch(err){
+          errors.push(["FAILED"]);
+      }
   }
-
 });
-//currentSheet.getRange(2, 34, currentSheet.getLastRow()-1, 1).setValues(errors);
-
+Logger.log(counter)
+Logger.log(errors)
+currentSheet.getRange(counter, numberOfCols, numberOfDataRows, 1).setValues(errors);
 }
 
 
-function createPDF(name,runperiod,runstartdate,runenddate,bankaccountnumber,jobtitle,ssfID,petraID,taxstatus,bankname,basicsalary,fixedovertimeallowance,rentallowance,oncallallowance,specialdutyallowance,incometaxPAYE,ssftier2employeecontribution,staffwelfarecontrbutionziswa,prepaidrentdeduction,totalearnings,totaldeductions,netpay,employerssfcont,emailAddress,pdfName,docFile,tempFolder,pdfFolder) {
-  
+function createPDF(valuesB8B12,valuesD8D12,valuesC15C19,valuesD20D24,totalearnings,netpay,employerssfcont,runperiod,emailAddress,pdfName,docFile,tempFolder,pdfFolder) {
+
 const tempFile = docFile.makeCopy(tempFolder);
-Logger.log(tempFile.getId())
 const tempDocFile = SpreadsheetApp.openById(tempFile.getId()).getSheetByName('PAYSLIP TEMP');
-tempDocFile.getRange('B8').setValue(name);
-tempDocFile.getRange('B9').setValue(runperiod);
-tempDocFile.getRange('B10').setValue(runstartdate);
-tempDocFile.getRange('B11').setValue(runenddate);
-tempDocFile.getRange('B12').setValue(bankaccountnumber);
-tempDocFile.getRange('D8').setValue(jobtitle);
-tempDocFile.getRange('D9').setValue(ssfID);
-tempDocFile.getRange('D10').setValue(petraID);
-tempDocFile.getRange('D11').setValue(taxstatus);
-tempDocFile.getRange('D12').setValue(bankname);
-tempDocFile.getRange('C15').setValue(basicsalary);
-tempDocFile.getRange('C16').setValue(fixedovertimeallowance);
-tempDocFile.getRange('C17').setValue(rentallowance);
-tempDocFile.getRange('C18').setValue(oncallallowance);
-tempDocFile.getRange('C19').setValue(specialdutyallowance);
+tempDocFile.getRange('B8:B12').setValues(valuesB8B12);
+tempDocFile.getRange('D8:D12').setValues(valuesD8D12);
+tempDocFile.getRange('C15:C19').setValues(valuesC15C19);
 tempDocFile.getRange('C24').setValue(totalearnings);
-tempDocFile.getRange('D20').setValue(incometaxPAYE);
-tempDocFile.getRange('D21').setValue(ssftier2employeecontribution);
-tempDocFile.getRange('D22').setValue(staffwelfarecontrbutionziswa);
-tempDocFile.getRange('D23').setValue(prepaidrentdeduction);
-tempDocFile.getRange('D24').setValue(totaldeductions);
+tempDocFile.getRange('D20:D24').setValues(valuesD20D24);
 tempDocFile.getRange('C27:D27').setValue(netpay);
 tempDocFile.getRange('C29').setValue(employerssfcont);
 SpreadsheetApp.flush();
 
 const pdfContentBlob = tempFile.getAs(MimeType.PDF);
-pdfFolder.createFile(pdfContentBlob).setName(pdfName);
+// pdfFolder.createFile(pdfContentBlob).setName(pdfName);
 tempFolder.removeFile(tempFile);
 
 var message = "Please find attached a copy of your payslip below."; // Second column
